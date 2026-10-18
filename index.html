@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>天元修仙记 · 云海疑云</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;min-height:100%}
+body{
+  background:#0d0c0a;
+  background-image:
+    radial-gradient(circle at 20% 0%,rgba(120,96,60,.18),transparent 45%),
+    radial-gradient(circle at 80% 100%,rgba(40,60,80,.20),transparent 50%);
+  color:#e6ddc9;
+  font-family:"Songti SC","Noto Serif CJK SC",serif;
+  font-size:17px;line-height:2.0;
+  padding:0 0 40px;
+}
+.wrap{max-width:640px;margin:0 auto;padding:26px 22px 0}
+header{text-align:center;margin-bottom:22px}
+h1{font-size:26px;margin:0 0 6px;letter-spacing:.32em;font-weight:600;
+   text-indent:.32em;color:#f0e6cf}
+.sub{font-size:12.5px;letter-spacing:.24em;color:#8d8171}
+.sub b{color:#b8944a;font-weight:400}
+hr{border:0;height:1px;margin:20px 0;
+   background:linear-gradient(90deg,transparent,rgba(184,148,74,.55),transparent)}
+.stats{display:flex;gap:8px;justify-content:center;margin-bottom:18px;flex-wrap:wrap}
+.chip{font-size:12.5px;letter-spacing:.06em;padding:5px 12px;border-radius:999px;
+  border:1px solid rgba(184,148,74,.35);color:#c9b98f;background:rgba(184,148,74,.07)}
+.chip.low{border-color:rgba(190,70,60,.5);color:#d98a80;background:rgba(190,70,60,.1)}
+#text p{margin:0 0 14px;text-indent:2em}
+#text p.nid{text-indent:0}
+@keyframes fi{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+#choices{margin-top:26px;display:flex;flex-direction:column;gap:11px}
+button{
+  font-family:inherit;font-size:16px;color:#eadfc6;text-align:left;
+  background:rgba(255,255,255,.03);border:1px solid rgba(184,148,74,.30);
+  border-radius:6px;padding:14px 16px;line-height:1.7;cursor:pointer;
+  transition:.18s;
+}
+button:active{background:rgba(184,148,74,.16);border-color:rgba(184,148,74,.7)}
+button .n{color:#b8944a;margin-right:.6em;font-size:14px}
+.ending{border:1px solid rgba(184,148,74,.45);border-radius:8px;padding:18px 20px;
+  margin-top:8px;background:rgba(184,148,74,.06);text-align:center}
+.ending h2{margin:0 0 8px;font-size:19px;letter-spacing:.2em;color:#d9c48a;font-weight:600}
+.ending p{text-indent:0;margin:0;font-size:14.5px;color:#9c9182;line-height:1.9}
+footer{margin-top:34px;display:flex;justify-content:space-between;align-items:center;
+  font-size:12.5px;color:#6d6459}
+.link{color:#8d8171;text-decoration:none;letter-spacing:.1em;background:none;
+  border:0;padding:0;font-size:12.5px;font-family:inherit}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>天元修仙记</h1>
+    <div class="sub">第 一 章 · <b>云 海 疑 云</b></div>
+    <hr>
+  </header>
+  <div class="stats" id="stats"></div>
+  <div id="text"></div>
+  <div id="choices"></div>
+  <footer>
+    <span id="hint">仙盟巡查司 · 卷宗乙十七</span>
+    <button class="link" onclick="restart()">重 新 开 始</button>
+  </footer>
+</div>
+<script>
+const S = {道心:70, 灵力:60, 线索:0};
+let cur = null;
+
+const NODES = {
+start:{
+  t:["太初学宫的钟声在云里闷着响，一声，又一声，像是从水底下传上来的。",
+     "你是仙盟巡查司的公孙煌。七日之内，三名外门弟子在云海驿失踪，卷宗只写了四个字：下落不明。",
+     "山门外的雾比往年厚。守门弟子说，雾是从落霞渡那边漫过来的。"],
+  c:[["先去驿馆，翻来客名册","inn"],
+     ["不作停留，直奔落霞渡","ferry"],
+     ["回藏经阁，调三十年前的地志","archive"]]
+},
+inn:{
+  t:["驿馆的灯芯剪过三回，掌柜的手一直在抖。",
+     "名册摊开，三个失踪弟子的名字并排落在一页上——笔迹一模一样，连收笔的顿点都分毫不差。",
+     "三个人，三种字，怎么会是同一只手写的？"],
+  fx:{"线索":1},
+  c:[["把名册翻到底，看还有没有第二个这样的页面","inn2"],
+     ["合上名册，问掌柜：他们住哪一间","inn3"],
+     ["什么也不问，先收下掌柜塞过来的那锭银子","bribe"]]
+},
+inn2:{
+  t:["再往下翻，十九页。",
+     "十九页上，每一页都有一个名字，笔迹都是那一只手。那不是名册，那是一本账簿——有人在这里，一个一个地记下谁来过、谁走了、谁没有走。",
+     "最后一行的墨还没干透。"],
+  fx:{"线索":2,"道心":-5},
+  c:[["把账簿收起，去落霞渡","ferry"]]
+},
+inn3:{
+  t:["掌柜的嘴唇动了动，没出声。",
+     "他伸手往西边指了一下，又飞快地缩回去，把袖子压在桌上。",
+     "「渡口……有人收活人。」他说完就低头去擦那张本来就很干净的桌子，擦了很久。"],
+  fx:{"线索":1},
+  c:[["谢过掌柜，去落霞渡","ferry"]]
+},
+bribe:{
+  t:["银子是温的，沾着汗。",
+     "你把它收进袖里。掌柜的松了口气，那口气松得太明显了，像是终于把一件东西脱手。",
+     "你走出驿馆的时候，他还站在灯下，没有再抬头。"],
+  fx:{"道心":-15,"线索":1},
+  c:[["去落霞渡","ferry"]]
+},
+archive:{
+  t:["藏经阁三层，地志在第七架，落了半寸灰。",
+     "三十年前，云海一带曾设过一处「养尸地」。阴尸宗的手笔。仙盟用了两年才平掉，卷宗结尾写着四个字：地脉未断。",
+     "那年之后，落霞渡的雾就没有散过。"],
+  fx:{"线索":2,"灵力":-5},
+  c:[["把地志抄一份带走，去落霞渡","ferry"]]
+},
+ferry:{
+  t:["落霞渡没有渡口，只有一块被水泡黑的石阶。",
+     "雾贴着江面走，江面上有一条船，船头站着一个人。那人穿着蓑衣，头上戴着斗笠，斗笠下面——什么也没有。",
+     "船不动，人也不动，可你觉得它在等你。"],
+  fx:{"线索":1},
+  c:[["上船","boat"],
+     ["退到石阶后面，看它要载谁","shadow"],
+     ["先甩一张试灵符过去","reveal"]]
+},
+boat:{
+  t:["你踏上去，船身没有沉，也没有晃。",
+     "行到江心，那个没有脸的船夫转过身来。蓑衣底下伸出七只手，每一只手里都握着一枚阴尸令。",
+     "「巡查司的，」一个声音从雾里说，「来得比上一次早。」"],
+  c:[["拔剑，先斩船夫","fight"],
+     ["不接话，翻身入水","water"]]
+},
+shadow:{
+  t:["你缩在石阶后面，屏住气。",
+     "雾里又走出两个人，抬着一副担架，担架上盖着白布。他们把担架推上船，船夫伸手在布上按了一下，白布底下的人轻轻咳了一声。",
+     "活的。"],
+  fx:{"线索":2},
+  c:[["现在就动手，把人抢下来","rescue"],
+     ["记下船去的方向，先不动","ferry2"]]
+},
+reveal:{
+  t:["符纸脱手，在空中炸开一团白光。",
+     "雾散了一瞬。江面上悬着九具尸体，赤脚，头朝下，脚踝上各系一根黑线，线的另一头没入水里。",
+     "九具。学宫这七年失踪的外门弟子，一共九人。"],
+  fx:{"线索":3,"灵力":-10,"道心":-10},
+  c:[["掐诀，断那九根线","fight"],
+     ["退开，先看清线的另一头连着哪里","ferry2"]]
+},
+rescue:{
+  t:["剑出鞘的时候，担架上的白布被掀开了。",
+     "底下躺着的是个十七八岁的少年，眼睛睁着，瞳孔里没有光。他看见你，很慢地笑了一下。",
+     "他不是在求救。他是在认人。"],
+  fx:{"道心":-10,"线索":1},
+  c:[["一剑送他走","mercy"],
+     ["收起剑，把他背起来","carry"],
+     ["退后，看他接下来做什么","fight"]]
+},
+ferry2:{
+  t:["你跟着那条船。",
+     "船不靠岸，一直往雾的深处去，最后停在江心一处看不见的浅滩上。那里立着九根木桩，桩上缠着黑线，线的另一头，全在水底。",
+     "浅滩中央有一口井。井口没有盖。"],
+  fx:{"线索":2},
+  c:[["下井","well"],
+     ["先斩木桩","fight"]]
+},
+mercy:{
+  t:["剑很快。他没有躲。",
+     "倒下之前，他嘴唇动了一下，谢字没发出来。",
+     "你把他放平，替他合上眼。雾里传来一声很轻的、几乎像是笑的声音。"],
+  fx:{"道心":10,"灵力":-20},
+  c:[["转身，去找那口井","well"]]
+},
+carry:{
+  t:["他比看上去轻得多，像一捆晒干的柴。",
+     "走出十几步，他趴在你背上，忽然说了第一句话：「别去井边。」",
+     "然后就不动了。"],
+  fx:{"线索":1,"道心":5},
+  c:[["听他的，绕开浅滩，带他回学宫","ending_escape"],
+     ["把他放下，一个人去井边","well"]]
+},
+fight:{
+  t:["阴尸令从七只手里一起落下。",
+     "你掐诀，灵力顺着剑脊走，一线白光。第一具尸倒下去的时候还是热的，第二具已经不是了。",
+     "雾越来越浓，你不知道自己斩了几个，只知道手一直在动。"],
+  fx:{"灵力":-25},
+  c:[["咬牙斩到最后","ending_fight"],
+     ["护住心脉，退出雾去","ending_hurt"]]
+},
+well:{
+  t:["井壁上刻满了字，一层压着一层，全是名字。",
+     "井底没有水，只有九根黑线从井壁的孔里穿进来，系在一口青铜棺材的九只环上。",
+     "棺盖开着一道缝。缝里有呼吸的声音，很匀，像是有人睡了很久，正要醒。"],
+  c:[["下去，把九根线一根一根斩断","ending_well"],
+     ["合上棺盖，把井口封死，回去复命","ending_seal"]]
+},
+ending_fight:{
+  end:"斩 尸",
+  t:["最后一具尸倒在浅水里，脸朝下。",
+     "你从它手里取下阴尸令，令上的符文还在发烫。九根黑线断了七根，剩下两根，沉在水里，摸不到底。",
+     "回学宫的路上，你没敢回头看那片雾。"],
+  after:"道心："+0
+},
+ending_hurt:{
+  end:"重 伤",
+  t:["你退到石阶上，血从袖口一直滴进江里。",
+     "雾没有再追。它们不追，是因为知道你会回来。",
+     "卷宗上的「下落不明」，如今变成了「九人」。"],
+  after:""
+},
+ending_escape:{
+  end:"活 口",
+  t:["你背着他走了整整一夜，天亮时看见学宫的飞檐。",
+     "他活下来了。审问的时候他只说了一句话：「井里有个人，一直在等巡查司的人来。」",
+     "仙盟当天封了落霞渡。封条贴上去的第三日，雾又漫过了渡口。"],
+  after:""
+},
+ending_well:{
+  end:"九 线 尽 断",
+  t:["第九根线断的时候，青铜棺里响起一声很长的叹息。",
+     "什么都没发生。没有尸潮，没有雷。棺材里的呼吸停了，井壁上的字一层一层剥落，露出底下的石头。",
+     "你从井里爬出来，天已经亮了。落霞渡的雾，第一次散干净了。"],
+  after:""
+},
+ending_seal:{
+  end:"封 井",
+  t:["你没有下去。你把棺盖合上，用剑在井壁上刻了仙盟的封字，然后填了三尺土。",
+     "回去以后，你在卷宗上写：疑案未结，建议长封。",
+     "批下来的只有两个字：准了。批注的人没有署名。"],
+  after:""
+}
+};
+
+const st=document.getElementById('stats'),
+      tx=document.getElementById('text'),
+      ch=document.getElementById('choices');
+
+function drawStats(){
+  st.innerHTML=['道心','灵力','线索'].map(k=>{
+    const v=S[k], low=(k!=='线索'&&v<35);
+    return `<span class="chip${low?' low':''}">${k} ${v}</span>`;
+  }).join('');
+}
+function apply(fx){
+  if(!fx)return;
+  for(const k in fx){ S[k]=Math.max(0,Math.min(100,S[k]+fx[k])); }
+}
+function go(id){
+  const n=NODES[id]; if(!n)return;
+  cur=id; apply(n.fx);
+  tx.innerHTML='';
+  n.t.forEach((p,i)=>{
+    const el=document.createElement('p');
+    el.textContent=p;
+    tx.appendChild(el);
+  });
+  ch.innerHTML='';
+  if(n.end){
+    const box=document.createElement('div');
+    box.className='ending';
+    box.innerHTML=`<h2>${n.end}</h2><p>第一章 · 完</p>`;
+    ch.appendChild(box);
+    const b=document.createElement('button');
+    b.innerHTML='<span class="n">◈</span>重新开始'; b.onclick=restart;
+    b.style.textAlign='center'; ch.appendChild(b);
+    ch.appendChild(mkBtn('第二章 · 阴尸围杀（未完待续）',null,true));
+  }else{
+    n.c.forEach((c,i)=>{
+      const b=mkBtn(c[0],c[1]);
+      ch.appendChild(b);
+    });
+  }
+  drawStats();
+  save();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function mkBtn(label,to,disabled){
+  const b=document.createElement('button');
+  b.innerHTML=`<span class="n">${disabled?'◇':'→'}</span>${label}`;
+  if(disabled){b.style.opacity=.35;b.disabled=true;}
+  else b.onclick=()=>go(to);
+  return b;
+}
+function save(){ try{localStorage.setItem('ty_save',JSON.stringify({S,cur}))}catch(e){} }
+function restart(){
+  S.道心=70;S.灵力=60;S.线索=0;
+  try{localStorage.removeItem('ty_save')}catch(e){}
+  go('start');
+}
+(function init(){
+  try{
+    const d=JSON.parse(localStorage.getItem('ty_save')||'null');
+    if(d&&d.cur&&NODES[d.cur]){Object.assign(S,d.S);go(d.cur);return;}
+  }catch(e){}
+  go('start');
+})();
+</script>
+</body>
+</html>
